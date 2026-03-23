@@ -1,0 +1,177 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  platform_admin
+  shop_owner
+  shop_staff
+}
+
+enum FulfillmentType {
+  delivery
+  pickup
+}
+
+enum OrderStatus {
+  new
+  confirmed
+  preparing
+  out_for_delivery
+  delivered
+  cancelled
+}
+
+enum OrderSource {
+  web
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         UserRole
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  ownedShops   Shop[]   @relation("ShopOwner")
+  auditLogs    AuditLog[]
+}
+
+model Shop {
+  id                   String         @id @default(cuid())
+  ownerUserId          String
+  name                 String
+  slug                 String         @unique
+  description          String
+  logoUrl              String?
+  coverImageUrl        String?
+  whatsappNumber       String
+  phoneNumber          String
+  address              String
+  city                 String
+  currencyCode         String         @default("USD")
+  defaultLanguage      String         @default("en")
+  isActive             Boolean        @default(true)
+  openingHoursJson     String
+  deliverySettingsJson String
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  owner                User           @relation("ShopOwner", fields: [ownerUserId], references: [id])
+  categories           Category[]
+  products             Product[]
+  orders               Order[]
+  subscriptions        Subscription[]
+  auditLogs            AuditLog[]
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  shopId     String
+  nameEn     String
+  nameAr     String
+  sortOrder  Int      @default(0)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  shop       Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  products   Product[]
+
+  @@index([shopId, sortOrder])
+}
+
+model Product {
+  id            String   @id @default(cuid())
+  shopId        String
+  categoryId    String
+  nameEn        String
+  nameAr        String
+  descriptionEn String
+  descriptionAr String
+  imageUrl      String?
+  sku           String?
+  price         Decimal
+  compareAtPrice Decimal?
+  isAvailable   Boolean  @default(true)
+  isFeatured    Boolean  @default(false)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  shop          Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  category      Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  orderItems    OrderItem[]
+
+  @@index([shopId, categoryId])
+}
+
+model Order {
+  id              String          @id @default(cuid())
+  shopId           String
+  orderNumber      String
+  customerName     String
+  customerPhone    String
+  area             String
+  address          String
+  fulfillmentType  FulfillmentType
+  status           OrderStatus     @default(new)
+  subtotal         Decimal
+  deliveryFee      Decimal
+  total            Decimal
+  customerNote     String?
+  whatsappMessage  String
+  source           OrderSource     @default(web)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  shop             Shop            @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  items            OrderItem[]
+
+  @@unique([shopId, orderNumber])
+  @@index([shopId, status, createdAt])
+}
+
+model OrderItem {
+  id                  String   @id @default(cuid())
+  orderId             String
+  productId           String
+  productNameSnapshot String
+  unitPrice           Decimal
+  quantity            Int
+  lineTotal           Decimal
+  itemNote            String?
+  createdAt           DateTime @default(now())
+  order               Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product             Product  @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+}
+
+model Subscription {
+  id           String   @id @default(cuid())
+  shopId        String
+  planName      String
+  status        String
+  startDate     DateTime
+  endDate       DateTime?
+  monthlyPrice  Decimal
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  shop          Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  shopId        String?
+  userId        String?
+  action        String
+  entityType    String
+  entityId      String
+  metadataJson  String
+  createdAt     DateTime @default(now())
+  shop          Shop?    @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+}

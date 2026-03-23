@@ -1,0 +1,19 @@
+{
+  "common": {
+    "appName": "WhatsApp Ordering System",
+    "cart": "Cart",
+    "checkout": "Checkout",
+    "placeOrder": "Place order on WhatsApp",
+    "currency": "USD",
+    "delivery": "Delivery",
+    "pickup": "Pickup",
+    "todayOrders": "Today's orders",
+    "revenueToday": "Revenue today",
+    "bestSellers": "Best sellers"
+  },
+  "landing": {
+    "eyebrow": "WhatsApp-first ordering",
+    "headline": "Turn WhatsApp chats into clean, trackable orders.",
+    "subheadline": "A mobile-first ordering system for Lebanese bakeries, mini markets, coffee shops, and local stores."
+  }
+}
